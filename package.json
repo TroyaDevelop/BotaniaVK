@@ -1,0 +1,16 @@
+{
+  "name": "flower-pot-game",
+  "version": "1.0.0",
+  "description": "Игра про горшок с цветком для ВКонтакте",
+  "main": "index.html",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vkontakte/vk-bridge": "^2.15.5",
+    "phaser": "^3.55.2",
+    "vite": "^5.0.0"
+  }
+}
