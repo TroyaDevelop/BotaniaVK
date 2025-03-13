@@ -28,6 +28,7 @@ export default class MainScene extends Phaser.Scene {
         this.load.image('flowerCoin', '../assets/flowerCoin.png');
         this.load.audio('wateringSound', '../assets/wateringSound.mp3');
         this.load.audio('backgroundMusic', '../assets/backgroundMusic.mp3');
+        this.load.image('avatar_bot1', './assets/grass.png');
     }
 
     create() {
@@ -47,23 +48,94 @@ export default class MainScene extends Phaser.Scene {
         // Top UI bar
         this.add.rectangle(600, 0, 1200, 60, 0x8B4513, 0.8).setOrigin(0.5, 0);
 
-        // Получение данных пользователя
-        this.bridge.send('VKWebAppGetUserInfo', {}).then(data => {
-            const playerNickname = `${data.first_name} ${data.last_name}`;
-            this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-        });
+        // Check if we're in VK environment
+        const isVKApp = window.location.hostname === 'gameofbotania.fun';
+        if (isVKApp) {
+            this.bridge.send('VKWebAppGetUserInfo')
+                .then(data => {
+                    const playerNickname = `${data.first_name} ${data.last_name}`;
+                    this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#ffffff' }).setOrigin(0.5, 0);
+                    
+                    return this.bridge.send('VKWebAppGetAuthToken', { scope: 'friends' });
+                })
+                .then(data => {
+                    const accessToken = data.access_token;
+                    return this.bridge.send('VKWebAppCallAPIMethod', {
+                        method: 'friends.get',
+                        params: {
+                            access_token: accessToken,
+                            fields: 'photo_100,first_name,last_name'
+                        }
+                    });
+                })
+                .then(data => {
+                    const friends = data.response.items;
+                    const players = {};
+                    let x = 50;
+                    
+                    const loadFriends = async () => {
+                        for (const friend of friends) {
+                            players[friend.id] = {
+                                name: `${friend.first_name} ${friend.last_name}`,
+                                flower: 'Роза',
+                                stage: Math.floor(Math.random() * 8),
+                                coins: Math.floor(Math.random() * 100)
+                            };
+                            
+                            await new Promise((resolve) => {
+                                this.load.image(`avatar_${friend.id}`, friend.photo_100);
+                                this.load.once('complete', resolve);
+                                this.load.start();
+                            });
+                            
+                            const friendContainer = this.add.container(x, 700);
+                            const avatar = this.add.image(0, 0, `avatar_${friend.id}`).setScale(0.2);
+                            const nameText = this.add.text(0, 50, friend.first_name, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
+                            
+                            friendContainer.add([avatar, nameText]);
+                            x += 100;
+                        }
+                        
+                        const botContainer = this.add.container(x, 700);
+                        const botAvatar = this.add.image(0, 0, 'avatar_bot1').setScale(0.2);
+                        const botNameText = this.add.text(0, 50, 'Бот 1', { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
+                        
+                        botContainer.add([botAvatar, botNameText]);
+                        
+                        players['bot1'] = {
+                            name: 'Бот 1',
+                            flower: 'Тюльпан',
+                            stage: Math.floor(Math.random() * 8),
+                            coins: Math.floor(Math.random() * 100)
+                        };
+
+                        this.displayFriends(players);
+                    };
+                    
+                    loadFriends();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.displayMockData();
+                });
+        } else {
+            console.log('Running in non-VK environment, using mock data');
+            this.displayMockData();
+        }
 
         // Load saved data
-        this.bridge.send('VKWebAppStorageGet', { keys: ['water', 'growthStage', 'lastWateringTime'] })
-            .then(data => {
-                if (data.keys && data.keys.length > 0) {
-                    water = parseInt(data.keys.find(key => key.key === 'water')?.value || MAX_WATER);
-                    growthStage = parseInt(data.keys.find(key => key.key === 'growthStage')?.value || 0);
-                    const lastWateringTime = parseInt(data.keys.find(key => key.key === 'lastWateringTime')?.value || Date.now());
-                    const timeSinceLastWatering = Date.now() - lastWateringTime;
-                    wateringTimeLeft = Math.max(0, 5 - Math.floor(timeSinceLastWatering / 1000));
-                }
-            });
+        if (isVKApp) {
+            this.bridge.send('VKWebAppStorageGet', { keys: ['water', 'growthStage', 'lastWateringTime'] })
+                .then(data => {
+                    if (data.keys && data.keys.length > 0) {
+                        water = parseInt(data.keys.find(key => key.key === 'water')?.value || MAX_WATER);
+                        growthStage = parseInt(data.keys.find(key => key.key === 'growthStage')?.value || 0);
+                        const lastWateringTime = parseInt(data.keys.find(key => key.key === 'lastWateringTime')?.value || Date.now());
+                        const timeSinceLastWatering = Date.now() - lastWateringTime;
+                        wateringTimeLeft = Math.max(0, 5 - Math.floor(timeSinceLastWatering / 1000));
+                    }
+                });
+        }
 
         // Water
         this.water = this.add.image(50, 32, 'water').setScale(0.12).setInteractive();
@@ -108,18 +180,20 @@ export default class MainScene extends Phaser.Scene {
                     this.flowerCoinText.setText(`${flowerCoins}`);
                 }
                 // Save data
-                this.bridge.send('VKWebAppStorageSet', {
-                    key: 'water',
-                    value: water.toString()
-                });
-                this.bridge.send('VKWebAppStorageSet', {
-                    key: 'growthStage',
-                    value: growthStage.toString()
-                });
-                this.bridge.send('VKWebAppStorageSet', {
-                    key: 'lastWateringTime',
-                    value: Date.now().toString()
-                });
+                if (isVKApp) {
+                    this.bridge.send('VKWebAppStorageSet', {
+                        key: 'water',
+                        value: water.toString()
+                    });
+                    this.bridge.send('VKWebAppStorageSet', {
+                        key: 'growthStage',
+                        value: growthStage.toString()
+                    });
+                    this.bridge.send('VKWebAppStorageSet', {
+                        key: 'lastWateringTime',
+                        value: Date.now().toString()
+                    });
+                }
             }
         });
 
@@ -148,50 +222,48 @@ export default class MainScene extends Phaser.Scene {
             },
             loop: true
         });
+    }
 
-        // Получение списка друзей
-        this.bridge.send('VKWebAppCallAPIMethod', {
-            method: 'friends.get',
-            params: {
-                fields: 'photo_100,first_name,last_name'
-            }
-        }).then(data => {
-            const friends = data.response.items;
-            const players = {};
-            let x = 50; // Начальная позиция по X
-            friends.forEach(friend => {
-                players[friend.id] = {
-                    name: `${friend.first_name} ${friend.last_name}`,
-                    flower: 'Роза',
-                    stage: Math.floor(Math.random() * 8),
-                    coins: Math.floor(Math.random() * 100)
-                };
-                // Создание квадратика с аватаркой
-                this.load.image(`avatar_${friend.id}`, friend.photo_100);
-                this.avatar = this.add.image(x, 700, `avatar_${friend.id}`).setScale(0.2);
-                this.nameText = this.add.text(x, 750, `${friend.first_name}`, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-                x += 100; // Сдвиг для следующего друга
-            });
-            // Добавление бота
-            this.load.image('avatar_bot1', './assets/grass.png');
-            this.botAvatar = this.add.image(x, 700, 'avatar_bot1').setScale(0.2);
-            this.botNameText = this.add.text(x, 750, 'Бот 1', { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-            x += 100; // Сдвиг для следующего друга
-            players['bot1'] = {
+    displayMockData() {
+        this.nicknameText = this.add.text(600, 20, 'Тестовый Игрок', { font: '24px Arial', fill: '#ffffff' }).setOrigin(0.5, 0);
+
+        const mockPlayers = {
+            'friend1': {
+                name: 'Друг 1',
+                flower: 'Роза',
+                stage: Math.floor(Math.random() * 8),
+                coins: Math.floor(Math.random() * 100)
+            },
+            'friend2': {
+                name: 'Друг 2',
+                flower: 'Тюльпан',
+                stage: Math.floor(Math.random() * 8),
+                coins: Math.floor(Math.random() * 100)
+            },
+            'bot1': {
                 name: 'Бот 1',
                 flower: 'Тюльпан',
                 stage: Math.floor(Math.random() * 8),
                 coins: Math.floor(Math.random() * 100)
-            };
-            this.displayFriends(players);
+            }
+        };
+
+        let x = 50;
+        Object.entries(mockPlayers).forEach(([id, player]) => {
+            const container = this.add.container(x, 700);
+            const avatar = this.add.image(0, 0, 'avatar_bot1').setScale(0.2);
+            const nameText = this.add.text(0, 50, player.name, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
+            container.add([avatar, nameText]);
+            x += 100;
         });
 
-        // Отображение данных
-        this.displayFriends = (players) => {
-            Object.values(players).forEach(player => {
-                console.log(`${player.name}: ${player.flower}, стадия: ${player.stage}, монеты: ${player.coins}`);
-            });
-        };
+        this.displayFriends(mockPlayers);
+    }
+
+    displayFriends(players) {
+        Object.values(players).forEach(player => {
+            console.log(`${player.name}: ${player.flower}, стадия: ${player.stage}, монеты: ${player.coins}`);
+        });
     }
 
     update() {
