@@ -14,21 +14,35 @@ export default class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('pot', '../assets/pot.png');
-        this.load.image('flower1_stage0', '../assets/flower1_stage0.png');
-        this.load.image('flower1_stage1', '../assets/flower1_stage1.png');
-        this.load.image('flower1_stage2', '../assets/flower1_stage2.png');
-        this.load.image('flower1_stage3', '../assets/flower1_stage3.png');
-        this.load.image('flower1_stage4', '../assets/flower1_stage4.png');
-        this.load.image('flower1_stage5', '../assets/flower1_stage5.png');
-        this.load.image('flower1_stage6', '../assets/flower1_stage6.png');
-        this.load.image('flower1_stage7', '../assets/flower1_stage7.png');
-        this.load.image('window', '../assets/window.png');
-        this.load.image('water', '../assets/water.png');
-        this.load.image('flowerCoin', '../assets/flowerCoin.png');
-        this.load.audio('wateringSound', '../assets/wateringSound.mp3');
-        this.load.audio('backgroundMusic', '../assets/backgroundMusic.mp3');
-        this.load.image('avatar_bot1', './assets/grass.png');
+        // Load assets with error handling
+        const assets = [
+            { key: 'pot', path: './assets/pot.png' },
+            { key: 'flower1_stage0', path: './assets/flower1_stage0.png' },
+            { key: 'flower1_stage1', path: './assets/flower1_stage1.png' },
+            { key: 'flower1_stage2', path: './assets/flower1_stage2.png' },
+            { key: 'flower1_stage3', path: './assets/flower1_stage3.png' },
+            { key: 'flower1_stage4', path: './assets/flower1_stage4.png' },
+            { key: 'flower1_stage5', path: './assets/flower1_stage5.png' },
+            { key: 'flower1_stage6', path: './assets/flower1_stage6.png' },
+            { key: 'flower1_stage7', path: './assets/flower1_stage7.png' },
+            { key: 'window', path: './assets/window.png' },
+            { key: 'water', path: './assets/water.png' },
+            { key: 'flowerCoin', path: './assets/flowerCoin.png' },
+            { key: 'avatar_bot1', path: './assets/grass.png' }
+        ];
+
+        assets.forEach(asset => {
+            this.load.image(asset.key, asset.path);
+        });
+
+        // Load audio
+        this.load.audio('wateringSound', './assets/wateringSound.mp3');
+        this.load.audio('backgroundMusic', './assets/backgroundMusic.mp3');
+
+        // Handle loading errors
+        this.load.on('loaderror', (fileObj) => {
+            console.error('Error loading asset:', fileObj.key);
+        });
     }
 
     create() {
@@ -50,78 +64,16 @@ export default class MainScene extends Phaser.Scene {
 
         // Check if we're in VK environment
         const isVKApp = window.location.hostname === 'gameofbotania.fun';
+        
         if (isVKApp) {
-            this.bridge.send('VKWebAppGetUserInfo')
-                .then(data => {
-                    const playerNickname = `${data.first_name} ${data.last_name}`;
-                    this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#ffffff' }).setOrigin(0.5, 0);
-                    
-                    return this.bridge.send('VKWebAppGetAuthToken', { scope: 'friends' });
-                })
-                .then(data => {
-                    const accessToken = data.access_token;
-                    return this.bridge.send('VKWebAppCallAPIMethod', {
-                        method: 'friends.get',
-                        params: {
-                            access_token: accessToken,
-                            fields: 'photo_100,first_name,last_name'
-                        }
-                    });
-                })
-                .then(data => {
-                    const friends = data.response.items;
-                    const players = {};
-                    let x = 50;
-                    
-                    const loadFriends = async () => {
-                        for (const friend of friends) {
-                            players[friend.id] = {
-                                name: `${friend.first_name} ${friend.last_name}`,
-                                flower: 'Роза',
-                                stage: Math.floor(Math.random() * 8),
-                                coins: Math.floor(Math.random() * 100)
-                            };
-                            
-                            await new Promise((resolve) => {
-                                this.load.image(`avatar_${friend.id}`, friend.photo_100);
-                                this.load.once('complete', resolve);
-                                this.load.start();
-                            });
-                            
-                            const friendContainer = this.add.container(x, 700);
-                            const avatar = this.add.image(0, 0, `avatar_${friend.id}`).setScale(0.2);
-                            const nameText = this.add.text(0, 50, friend.first_name, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-                            
-                            friendContainer.add([avatar, nameText]);
-                            x += 100;
-                        }
-                        
-                        const botContainer = this.add.container(x, 700);
-                        const botAvatar = this.add.image(0, 0, 'avatar_bot1').setScale(0.2);
-                        const botNameText = this.add.text(0, 50, 'Бот 1', { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-                        
-                        botContainer.add([botAvatar, botNameText]);
-                        
-                        players['bot1'] = {
-                            name: 'Бот 1',
-                            flower: 'Тюльпан',
-                            stage: Math.floor(Math.random() * 8),
-                            coins: Math.floor(Math.random() * 100)
-                        };
-
-                        this.displayFriends(players);
-                    };
-                    
-                    loadFriends();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    this.displayMockData();
-                });
+            this.initVKApp();
         } else {
             console.log('Running in non-VK environment, using mock data');
             this.displayMockData();
         }
+
+        // Initialize game objects
+        this.initGameObjects();
 
         // Load saved data
         if (isVKApp) {
@@ -222,6 +174,91 @@ export default class MainScene extends Phaser.Scene {
             },
             loop: true
         });
+    }
+
+    initVKApp() {
+        this.bridge.send('VKWebAppGetUserInfo')
+            .then(data => {
+                const playerNickname = `${data.first_name} ${data.last_name}`;
+                this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#ffffff' }).setOrigin(0.5, 0);
+                
+                return this.bridge.send('VKWebAppGetAuthToken', { scope: 'friends' });
+            })
+            .then(data => {
+                const accessToken = data.access_token;
+                return this.bridge.send('VKWebAppCallAPIMethod', {
+                    method: 'friends.get',
+                    params: {
+                        access_token: accessToken,
+                        fields: 'photo_100,first_name,last_name'
+                    }
+                });
+            })
+            .then(data => {
+                this.loadFriendsData(data.response.items);
+            })
+            .catch(error => {
+                console.error('VK API Error:', error);
+                this.displayMockData();
+            });
+    }
+
+    async loadFriendsData(friends) {
+        const players = {};
+        let x = 50;
+
+        try {
+            for (const friend of friends) {
+                players[friend.id] = {
+                    name: `${friend.first_name} ${friend.last_name}`,
+                    flower: 'Роза',
+                    stage: Math.floor(Math.random() * 8),
+                    coins: Math.floor(Math.random() * 100)
+                };
+
+                // Load friend avatar
+                try {
+                    await new Promise((resolve, reject) => {
+                        this.load.image(`avatar_${friend.id}`, friend.photo_100);
+                        this.load.once('complete', resolve);
+                        this.load.once('loaderror', reject);
+                        this.load.start();
+                    });
+
+                    const friendContainer = this.add.container(x, 700);
+                    const avatar = this.add.image(0, 0, `avatar_${friend.id}`).setScale(0.2);
+                    const nameText = this.add.text(0, 50, friend.first_name, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
+                    
+                    friendContainer.add([avatar, nameText]);
+                } catch (error) {
+                    console.error('Error loading friend avatar:', friend.id);
+                }
+
+                x += 100;
+            }
+
+            // Add bot after friends
+            const botContainer = this.add.container(x, 700);
+            const botAvatar = this.add.image(0, 0, 'avatar_bot1').setScale(0.2);
+            const botNameText = this.add.text(0, 50, 'Бот 1', { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
+            
+            botContainer.add([botAvatar, botNameText]);
+            
+            players['bot1'] = {
+                name: 'Бот 1',
+                flower: 'Тюльпан',
+                stage: Math.floor(Math.random() * 8),
+                coins: Math.floor(Math.random() * 100)
+            };
+
+            this.displayFriends(players);
+        } catch (error) {
+            console.error('Error loading friends data:', error);
+            this.displayMockData();
+        }
+    }
+
+    initGameObjects() {
     }
 
     displayMockData() {
