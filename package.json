@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vkontakte/vk-bridge": "^2.15.5",
+    "express": "^4.21.2",
     "phaser": "^3.55.2",
     "vite": "^5.0.0"
   }
