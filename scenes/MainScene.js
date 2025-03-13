@@ -177,12 +177,17 @@ export default class MainScene extends Phaser.Scene {
     }
 
     initVKApp() {
+        const APP_ID = 51815272; // ID приложения ВК
+        
         this.bridge.send('VKWebAppGetUserInfo')
             .then(data => {
                 const playerNickname = `${data.first_name} ${data.last_name}`;
                 this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#ffffff' }).setOrigin(0.5, 0);
                 
-                return this.bridge.send('VKWebAppGetAuthToken', { scope: 'friends' });
+                return this.bridge.send('VKWebAppGetAuthToken', { 
+                    app_id: APP_ID,
+                    scope: 'friends' 
+                });
             })
             .then(data => {
                 const accessToken = data.access_token;
@@ -190,7 +195,8 @@ export default class MainScene extends Phaser.Scene {
                     method: 'friends.get',
                     params: {
                         access_token: accessToken,
-                        fields: 'photo_100,first_name,last_name'
+                        fields: 'photo_100,first_name,last_name',
+                        v: '5.131'
                     }
                 });
             })

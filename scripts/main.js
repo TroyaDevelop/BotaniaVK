@@ -3,12 +3,21 @@ import Phaser from 'phaser';
 import MainScene from '../scenes/MainScene.js';
 
 // Initialize VK Mini App
-const APP_ID = 51815272; // Замените на ваш ID приложения
+const APP_ID = 53221746; // ID вашего приложения ВК
 const isVKApp = window.location.hostname === 'gameofbotania.fun';
 
 if (isVKApp) {
     try {
-        bridge.send('VKWebAppInit', { app_id: APP_ID });
+        // Инициализация VK Mini Apps
+        bridge.send('VKWebAppInit');
+        
+        // Запрос на авторизацию с app_id
+        bridge.send('VKWebAppGetAuthToken', {
+            app_id: APP_ID,
+            scope: 'friends'
+        }).catch(error => {
+            console.error('Auth error:', error);
+        });
     } catch (error) {
         console.error('Failed to initialize VK Mini App:', error);
     }
