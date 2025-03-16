@@ -15,20 +15,20 @@ export default class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('pot', '../assets/pot.png');
-        this.load.image('flower1_stage0', '../assets/flower1_stage0.png');
-        this.load.image('flower1_stage1', '../assets/flower1_stage1.png');
-        this.load.image('flower1_stage2', '../assets/flower1_stage2.png');
-        this.load.image('flower1_stage3', '../assets/flower1_stage3.png');
-        this.load.image('flower1_stage4', '../assets/flower1_stage4.png');
-        this.load.image('flower1_stage5', '../assets/flower1_stage5.png');
-        this.load.image('flower1_stage6', '../assets/flower1_stage6.png');
-        this.load.image('flower1_stage7', '../assets/flower1_stage7.png');
-        this.load.image('window', '../assets/window.png');
-        this.load.image('water', '../assets/water.png');
-        this.load.image('flowerCoin', '../assets/flowerCoin.png');
-        this.load.audio('wateringSound', '../assets/wateringSound.mp3');
-        this.load.audio('backgroundMusic', '../assets/backgroundMusic.mp3');
+        this.load.image('pot', 'assets/pot.png');
+        this.load.image('flower1_stage0', 'assets/flower1_stage0.png');
+        this.load.image('flower1_stage1', 'assets/flower1_stage1.png');
+        this.load.image('flower1_stage2', 'assets/flower1_stage2.png');
+        this.load.image('flower1_stage3', 'assets/flower1_stage3.png');
+        this.load.image('flower1_stage4', 'assets/flower1_stage4.png');
+        this.load.image('flower1_stage5', 'assets/flower1_stage5.png');
+        this.load.image('flower1_stage6', 'assets/flower1_stage6.png');
+        this.load.image('flower1_stage7', 'assets/flower1_stage7.png');
+        this.load.image('window', 'assets/window.png');
+        this.load.image('water', 'assets/water.png');
+        this.load.image('flowerCoin', 'assets/flowerCoin.png');
+        this.load.audio('wateringSound', 'assets/wateringSound.mp3');
+        this.load.audio('backgroundMusic', 'assets/backgroundMusic.mp3');
     }
 
     create() {
