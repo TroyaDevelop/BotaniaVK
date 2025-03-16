@@ -2,8 +2,12 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   server: {
-    host: true,
-    allowedHosts: ['gameofbotania.fun'],  // Добавьте ваш домен сюда
-    cors: true,  // Включите CORS, если требуется
+    host: '0.0.0.0',
+    port: 5174, // Явно укажите порт
+    hmr: {
+      host: 'localhost',
+      protocol: 'ws', // Только ws для разработки
+    },
+    cors: true,
   },
 });

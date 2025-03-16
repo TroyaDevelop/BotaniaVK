@@ -47,11 +47,8 @@ export default class MainScene extends Phaser.Scene {
         // Top UI bar
         this.add.rectangle(600, 0, 1200, 60, 0x8B4513, 0.8).setOrigin(0.5, 0);
 
-        // Получение данных пользователя
-        this.bridge.send('VKWebAppGetUserInfo', {}).then(data => {
-            const playerNickname = `${data.first_name} ${data.last_name}`;
-            this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-        });
+        const playerNickname = 'Игрок 1';
+        this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#000000' }).setOrigin(0.5, 0);
 
         // Load saved data
         this.bridge.send('VKWebAppStorageGet', { keys: ['water', 'growthStage', 'lastWateringTime'] })
