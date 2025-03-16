@@ -8,6 +8,7 @@ export default defineConfig({
       host: 'localhost',
       protocol: 'ws', // Только ws для разработки
     },
-    cors: true,
+    allowedHosts: 'all',
+    cors: true
   },
 });
