@@ -32,7 +32,7 @@ export default class MainScene extends Phaser.Scene {
     }
 
     create() {
-        this.socket = io('http://localhost:3000');
+        this.socket = io('wss://gameofbotania.fun');
         this.socket.on('connect', () => {});
         this.socket.on('plantUpdated', (data) => {});
 
