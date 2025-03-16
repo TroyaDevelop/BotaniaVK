@@ -41,7 +41,7 @@ module.exports = {
       directory: path.join(__dirname, 'dist'),
     },
     compress: true,
-    port: 9000,
+    port: 5173,
     host: '0.0.0.0',
     allowedHosts: ['gameofbotania.fun', 'localhost'],
     historyApiFallback: true,
