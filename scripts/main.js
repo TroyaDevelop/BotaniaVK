@@ -3,7 +3,11 @@ import Phaser from 'phaser';
 import MainScene from '../scenes/MainScene.js';
 
 // Initialize VK API
-bridge.send('VKWebAppInit');
+bridge.send('VKWebAppInit')
+  .then(() => bridge.send('VKWebAppGetUserInfo'))
+  .then(user => {
+    this.nicknameText.setText(`${user.first_name} ${user.last_name}`);
+  });
 
 const config = {
     type: Phaser.AUTO,

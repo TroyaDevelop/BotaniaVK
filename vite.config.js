@@ -4,7 +4,7 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: ['gameofbotania.fun'],
-    hmr: false,  // Отключаем HMR
-    cors: true
-  },
+    cors: true,
+    hmr: false
+  }
 });
