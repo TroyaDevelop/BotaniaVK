@@ -6,6 +6,7 @@ let timeLeft = 5;
 let wateringTimeLeft = 5;
 let growthStage = 0;
 let flowerCoins = 0;
+let lastWateringTime = 0;
 
 export default class MainScene extends Phaser.Scene {
     constructor({ bridge }) {
@@ -46,21 +47,6 @@ export default class MainScene extends Phaser.Scene {
     
         // Top UI bar
         this.add.rectangle(600, 0, 1200, 60, 0x8B4513, 0.8).setOrigin(0.5, 0);
-
-        const playerNickname = 'Игрок 1';
-        this.nicknameText = this.add.text(600, 20, playerNickname, { font: '24px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-
-        // Load saved data
-        this.bridge.send('VKWebAppStorageGet', { keys: ['water', 'growthStage', 'lastWateringTime'] })
-            .then(data => {
-                if (data.keys && data.keys.length > 0) {
-                    water = parseInt(data.keys.find(key => key.key === 'water')?.value || MAX_WATER);
-                    growthStage = parseInt(data.keys.find(key => key.key === 'growthStage')?.value || 0);
-                    const lastWateringTime = parseInt(data.keys.find(key => key.key === 'lastWateringTime')?.value || Date.now());
-                    const timeSinceLastWatering = Date.now() - lastWateringTime;
-                    wateringTimeLeft = Math.max(0, 5 - Math.floor(timeSinceLastWatering / 1000));
-                }
-            });
 
         // Water
         this.water = this.add.image(50, 32, 'water').setScale(0.12).setInteractive();
@@ -146,49 +132,41 @@ export default class MainScene extends Phaser.Scene {
             loop: true
         });
 
-        // Получение списка друзей
-        this.bridge.send('VKWebAppCallAPIMethod', {
-            method: 'friends.get',
-            params: {
-                fields: 'photo_100,first_name,last_name'
-            }
-        }).then(data => {
-            const friends = data.response.items;
-            const players = {};
-            let x = 50; // Начальная позиция по X
-            friends.forEach(friend => {
-                players[friend.id] = {
-                    name: `${friend.first_name} ${friend.last_name}`,
-                    flower: 'Роза',
-                    stage: Math.floor(Math.random() * 8),
-                    coins: Math.floor(Math.random() * 100)
-                };
-                // Создание квадратика с аватаркой
-                this.load.image(`avatar_${friend.id}`, friend.photo_100);
-                this.avatar = this.add.image(x, 700, `avatar_${friend.id}`).setScale(0.2);
-                this.nameText = this.add.text(x, 750, `${friend.first_name}`, { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-                x += 100; // Сдвиг для следующего друга
+        this.bridge.send('VKWebAppStorageGet', { keys: ['water', 'growthStage', 'lastWateringTime'] })
+            .then(data => {
+                if (data.keys[0]) {
+                    water = parseInt(data.keys[0].value);
+                }
+                if (data.keys[1]) {
+                    growthStage = parseInt(data.keys[1].value);
+                }
+                if (data.keys[2]) {
+                    lastWateringTime = parseInt(data.keys[2].value);
+                }
+                this.updateWaterText();
+                this.updateTimeText();
+                this.updateGrowthStage();
+                this.updateFlowerCoins();
             });
-            // Добавление бота
-            this.load.image('avatar_bot1', './assets/grass.png');
-            this.botAvatar = this.add.image(x, 700, 'avatar_bot1').setScale(0.2);
-            this.botNameText = this.add.text(x, 750, 'Бот 1', { font: '14px Arial', fill: '#000000' }).setOrigin(0.5, 0);
-            x += 100; // Сдвиг для следующего друга
-            players['bot1'] = {
-                name: 'Бот 1',
-                flower: 'Тюльпан',
-                stage: Math.floor(Math.random() * 8),
-                coins: Math.floor(Math.random() * 100)
-            };
-            this.displayFriends(players);
-        });
+    }
 
-        // Отображение данных
-        this.displayFriends = (players) => {
-            Object.values(players).forEach(player => {
-                console.log(`${player.name}: ${player.flower}, стадия: ${player.stage}, монеты: ${player.coins}`);
-            });
-        };
+    updateWaterText() {
+        this.waterText.setText(`${water}/${MAX_WATER}`);
+    }
+
+    updateTimeText() {
+        const timeSinceLastWatering = Date.now() - lastWateringTime;
+        const wateringTimeLeft = Math.max(0, 5 - Math.floor(timeSinceLastWatering / 1000));
+        this.wateringTimerText.setText(`Полить через: ${wateringTimeLeft} сек`);
+    }
+
+    updateGrowthStage() {
+        this.flower.setTexture(`flower1_stage${growthStage}`);
+        this.flower.setPosition(600, 275);
+    }
+
+    updateFlowerCoins() {
+        this.flowerCoinText.setText(`${flowerCoins}`);
     }
 
     update() {
