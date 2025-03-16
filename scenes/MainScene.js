@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import io from 'socket.io-client';
 
 const MAX_WATER = 5;
 let water = 3;
@@ -31,6 +32,10 @@ export default class MainScene extends Phaser.Scene {
     }
 
     create() {
+        this.socket = io('http://localhost:3000');
+        this.socket.on('connect', () => {});
+        this.socket.on('plantUpdated', (data) => {});
+
         const wall = this.add.graphics();
         wall.fillStyle(0xF5F5DC, 1);
         wall.fillRect(0, 0, 1200, 800);
