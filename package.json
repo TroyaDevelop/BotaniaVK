@@ -6,7 +6,8 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "server": "node server.js"
   },
   "dependencies": {
     "@vkontakte/vk-bridge": "^2.15.5",
