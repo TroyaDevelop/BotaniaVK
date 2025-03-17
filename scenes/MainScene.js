@@ -9,10 +9,9 @@ let flowerCoins = 0;
 let lastWateringTime = 0;
 
 export default class MainScene extends Phaser.Scene {
-    constructor({ bridge, token }) {
+    constructor({ bridge }) {
         super('MainScene');
         this.bridge = bridge;
-        this.token = token;
     }
 
     preload() {
@@ -173,3 +172,4 @@ export default class MainScene extends Phaser.Scene {
     update() {
     }
 }
+//
