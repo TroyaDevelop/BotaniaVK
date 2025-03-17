@@ -1,3 +1,4 @@
+import '../style.css';
 import bridge from '@vkontakte/vk-bridge';
 import Phaser from 'phaser';
 import MainScene from '../scenes/MainScene.js';

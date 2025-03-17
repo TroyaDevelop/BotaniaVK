@@ -8,6 +8,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
+    publicPath: '/'
   },
   performance: {
     hints: false,
@@ -21,7 +22,7 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|jpe?g|gif|mp3)$/i,
+        test: /\.(png|jpe?g|gif|mp3|ico)$/i,
         type: 'asset/resource',
       },
     ],
@@ -29,10 +30,14 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './index.html',
+      filename: 'index.html',
+      inject: true,
+      favicon: './assets/favicon.ico'
     }),
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'assets', to: 'assets' }
+        { from: 'assets', to: 'assets' },
+        { from: 'style.css', to: 'style.css' }
       ],
     }),
   ],
@@ -41,8 +46,8 @@ module.exports = {
       directory: path.join(__dirname, 'dist'),
     },
     compress: true,
-    port: 9000,
-    host: '0.0.0.0',
+    port: 5173,
+    host: 'localhost',
     allowedHosts: 'all',
     hot: false,
     client: false,
