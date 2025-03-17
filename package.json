@@ -9,7 +9,7 @@
     "server": "node server.js"
   },
   "dependencies": {
-    "@vkontakte/vk-bridge": "^2.15.5",
+    "@vkontakte/vk-bridge": "^2.15.6",
     "express": "^4.21.2",
     "phaser": "^3.55.2"
   },
