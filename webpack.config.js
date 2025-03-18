@@ -47,8 +47,10 @@ export default {
             directory: path.join(__dirname, 'dist'),
         },
         compress: true,
-        port: 9000,
+        port: 5173,
         open: true, // Автоматически открывать браузер при запуске сервера
+        allowedHosts: 'all', // Разрешаем все хосты
+        host: '0.0.0.0', // Разрешаем внешние подключения
     },
     mode: 'development',
 };
