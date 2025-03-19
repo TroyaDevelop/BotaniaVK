@@ -47,10 +47,13 @@ export default {
             directory: path.join(__dirname, 'dist'),
         },
         compress: true,
-        port: 5173,
+        port: 10888, // Стандартный порт для тестирования приложений ВК
         open: true, // Автоматически открывать браузер при запуске сервера
         allowedHosts: 'all', // Разрешаем все хосты
         host: '0.0.0.0', // Разрешаем внешние подключения
+        server: {
+            type: 'https'
+        }
     },
     mode: 'development',
 };

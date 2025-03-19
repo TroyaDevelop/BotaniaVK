@@ -1,21 +1,22 @@
 import bridge from '@vkontakte/vk-bridge';
 
-// Инициализация VK Bridge
+// Инициализируем VK Bridge
 bridge.send('VKWebAppInit')
     .then(() => {
         console.log('VK Bridge initialized');
+        // После успешной инициализации получаем информацию о пользователе
+        return bridge.send('VKWebAppGetUserInfo');
     })
-    .catch((error) => {
-        console.error('VK Bridge initialization failed', error);
+    .then(data => {
+        console.log('User data:', data);
+        // Отображаем информацию о пользователе
+        document.getElementById('myElement').innerHTML = `
+            Привет, ${data.first_name}!
+            <br>
+            ID: ${data.id}
+        `;
+    })
+    .catch(error => {
+        console.error(error);
+        document.getElementById('myElement').innerHTML = 'Произошла ошибка при инициализации';
     });
-
-async function testVkBridge() {
-    try {
-        const userInfo = await bridge.send('VKWebAppGetUserInfo');
-        console.log('User Info:', userInfo);
-    } catch (error) {
-        console.error("Error:", error);
-    }
-}
-
-testVkBridge();
