@@ -61,9 +61,14 @@ if (window.vkBridge) {
 export function initGame(userData) {
     console.log('Инициализация игры для пользователя:', userData.id);
     
-    // Проверка статуса сервера
+    // Проверка статуса сервера - добавляем обработку ошибок
     fetch('/api/status')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('server-status').textContent = `Статус сервера: ${data.message}`;
         })

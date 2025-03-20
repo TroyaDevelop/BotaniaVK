@@ -3,17 +3,28 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 5173;
+const PORT = process.env.PORT || 5173; // Оставляем 5173 для Express
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // Разрешаем запросы с любого источника для разработки
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Для отладки запросов
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
 // Статические файлы из папки dist (собранные Webpack)
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // API эндпоинт
 app.get('/api/status', (req, res) => {
+  console.log('API status endpoint hit');
   res.json({ status: 'ok', message: 'API работает' });
 });
 
