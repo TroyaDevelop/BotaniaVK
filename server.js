@@ -8,21 +8,18 @@ const PORT = process.env.PORT || 5173;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Основной маршрут
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Статические файлы из папки dist (собранные Webpack)
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// API эндпоинт (пример)
+// API эндпоинт
 app.get('/api/status', (req, res) => {
   res.json({ status: 'ok', message: 'API работает' });
 });
 
-// Обработка всех остальных маршрутов (для SPA)
+// Все остальные GET-запросы перенаправляем на index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Запуск сервера
