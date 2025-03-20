@@ -122,3 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
 export function isVKBridgeAvailable() {
     return typeof vkBridge !== 'undefined';
 }
+
+// app.js
+getUserInfo()
+  .then(data => {
+    initGame(data);
+  });
