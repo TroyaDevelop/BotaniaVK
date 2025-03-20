@@ -108,4 +108,48 @@ export default class ApiService {
             throw error;
         });
     }
+
+    // Сохраняет данные пользователя
+    saveUserData(userId, score, purchases) {
+        return fetch(`${this.baseUrl}/api/userData`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId, score, purchases })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Данные пользователя сохранены:', data);
+            return data;
+        })
+        .catch(error => {
+            console.error('Ошибка сохранения данных пользователя:', error);
+            throw error;
+        });
+    }
+
+    // Получает данные пользователя
+    getUserData(userId) {
+        return fetch(`${this.baseUrl}/api/userData/${userId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Получены данные пользователя:', data);
+                return data;
+            })
+            .catch(error => {
+                console.error('Ошибка получения данных пользователя:', error);
+                throw error;
+            });
+    }
 }

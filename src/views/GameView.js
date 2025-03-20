@@ -5,6 +5,7 @@ export default class GameView {
     constructor() {
         this.gameElement = document.getElementById('game');
         this.clickHandler = null;
+        this.buyHandlers = {}; // Хранение обработчиков покупки для разных товаров
     }
 
     // Инициализация игрового интерфейса
@@ -21,6 +22,12 @@ export default class GameView {
                 <div id="leaderboard" style="margin-top: 20px; padding: 10px; background-color: white; border-radius: 5px;">
                     <h3>Таблица лидеров</h3>
                     <div id="leaderboard-content">Загрузка таблицы лидеров...</div>
+                </div>
+                <div id="shop" style="margin-top: 20px;">
+                    <h3>Магазин</h3>
+                    <div id="shop-items" class="shop-container">
+                        <!-- Товары будут добавлены динамически -->
+                    </div>
                 </div>
             </div>
         `;
@@ -114,6 +121,106 @@ export default class GameView {
     update(event, data) {
         if (event === 'scoreChanged') {
             this.updateScore(data);
+        } else if (event === 'purchaseChanged') {
+            // При изменении покупок обновляем отображение магазина
+            this.updateShopItem(data.itemId, data.quantity);
+        } else if (event === 'purchasesLoaded') {
+            // При загрузке покупок обновляем информацию об автоклике
+            const pointsPerSecond = this.calculatePointsPerSecond(data);
+            this.updateAutoClickInfo(pointsPerSecond);
         }
+    }
+
+    renderShopItems(shopItems, purchases) {
+        const shopItemsContainer = document.getElementById('shop-items');
+        if (!shopItemsContainer) return;
+        
+        let html = '';
+        
+        for (const itemId in shopItems) {
+            const item = shopItems[itemId];
+            const quantity = purchases[itemId] || 0;
+            const price = this.calculateItemPrice(item, quantity);
+            
+            html += `
+                <div class="shop-item">
+                    <div class="shop-item-image">
+                        <img src="${item.image}" alt="${item.name}">
+                    </div>
+                    <div class="shop-item-info">
+                        <h4>${item.name} <span class="quantity">${quantity > 0 ? `(${quantity})` : ''}</span></h4>
+                        <p>${item.description}</p>
+                        <p>Цена: <span class="price">${price}</span> очков</p>
+                        <button class="buy-button" data-item-id="${itemId}">Купить</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        shopItemsContainer.innerHTML = html;
+        
+        // Добавляем обработчики для кнопок покупки
+        this.setupBuyButtons();
+    }
+
+    calculateItemPrice(item, quantity) {
+        return Math.floor(item.basePrice * Math.pow(item.priceFactor, quantity));
+    }
+
+    updateAutoClickInfo(pointsPerSecond) {
+        const autoClickInfo = document.getElementById('auto-click-info');
+        if (autoClickInfo) {
+            autoClickInfo.textContent = `Авто: +${pointsPerSecond.toFixed(1)} /сек`;
+        }
+    }
+
+    setupBuyButtons() {
+        const buyButtons = document.querySelectorAll('.buy-button');
+        buyButtons.forEach(button => {
+            const itemId = button.getAttribute('data-item-id');
+            button.addEventListener('click', () => {
+                if (this.buyHandlers[itemId]) {
+                    this.buyHandlers[itemId]();
+                }
+            });
+        });
+    }
+
+    setBuyHandler(itemId, handler) {
+        this.buyHandlers[itemId] = handler;
+    }
+
+    updateShopItem(itemId, quantity) {
+        const itemElement = document.querySelector(`.shop-item .buy-button[data-item-id="${itemId}"]`).closest('.shop-item');
+        if (itemElement) {
+            const quantityElement = itemElement.querySelector('.quantity');
+            if (quantityElement) {
+                quantityElement.textContent = quantity > 0 ? `(${quantity})` : '';
+            }
+            
+            // Обновляем цену товара
+            const priceElement = itemElement.querySelector('.price');
+            if (priceElement) {
+                const item = document.querySelector(`.shop-item .buy-button[data-item-id="${itemId}"]`).closest('.shop-item');
+                if (item) {
+                    // Получаем базовую цену и множитель из data-атрибутов или через обратный вызов
+                    const basePrice = parseFloat(item.getAttribute('data-base-price') || 50);
+                    const priceFactor = parseFloat(item.getAttribute('data-price-factor') || 1.5);
+                    const newPrice = Math.floor(basePrice * Math.pow(priceFactor, quantity));
+                    priceElement.textContent = newPrice;
+                }
+            }
+        }
+    }
+
+    calculatePointsPerSecond(purchases) {
+        let pointsPerSecond = 0;
+        
+        // Для курятников (0.2 очка в секунду за каждый)
+        if (purchases.chickenCoop) {
+            pointsPerSecond += purchases.chickenCoop * 0.2;
+        }
+        
+        return pointsPerSecond;
     }
 }
