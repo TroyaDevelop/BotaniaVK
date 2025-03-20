@@ -61,7 +61,7 @@ export default class ApiService {
             })
             .then(data => {
                 console.log('Получен результат:', data);
-                return data.score;
+                return data;
             })
             .catch(error => {
                 console.error('Ошибка получения результата:', error);
@@ -84,71 +84,6 @@ export default class ApiService {
             })
             .catch(error => {
                 console.error('Ошибка получения таблицы лидеров:', error);
-                throw error;
-            });
-    }
-
-    // Сбрасывает все результаты (для тестирования)
-    resetAllScores() {
-        return fetch(`${this.baseUrl}/api/scores/reset`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Все результаты сброшены:', data);
-            return data;
-        })
-        .catch(error => {
-            console.error('Ошибка сброса результатов:', error);
-            throw error;
-        });
-    }
-
-    // Сохраняет данные пользователя
-    saveUserData(userId, score, purchases) {
-        return fetch(`${this.baseUrl}/api/userData`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ userId, score, purchases })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Данные пользователя сохранены:', data);
-            return data;
-        })
-        .catch(error => {
-            console.error('Ошибка сохранения данных пользователя:', error);
-            throw error;
-        });
-    }
-
-    // Получает данные пользователя
-    getUserData(userId) {
-        return fetch(`${this.baseUrl}/api/userData/${userId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Получены данные пользователя:', data);
-                return data;
-            })
-            .catch(error => {
-                console.error('Ошибка получения данных пользователя:', error);
                 throw error;
             });
     }
