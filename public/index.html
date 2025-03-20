@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botania VK</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="user-info">Загрузка информации о пользователе...</div>
+        <div id="game">
+            <!-- Здесь будет содержимое игры -->
+            <h1>Botania VK</h1>
+            <p>Добро пожаловать в игру!</p>
+            <div id="server-status">Проверка соединения с сервером...</div>
+        </div>
+        <button class="button" id="share-button">Поделиться игрой</button>
+    </div>
+
+    <!-- Подключение VK Bridge -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    
+    <!-- Подключение собственного скрипта -->
+    <script src="app.js"></script>
+</body>
+</html>
