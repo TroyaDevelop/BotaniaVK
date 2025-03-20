@@ -61,7 +61,7 @@ export default class ApiService {
             })
             .then(data => {
                 console.log('Получен результат:', data);
-                return data;
+                return data.score;
             })
             .catch(error => {
                 console.error('Ошибка получения результата:', error);
@@ -86,5 +86,26 @@ export default class ApiService {
                 console.error('Ошибка получения таблицы лидеров:', error);
                 throw error;
             });
+    }
+
+    // Сбрасывает все результаты (для тестирования)
+    resetAllScores() {
+        return fetch(`${this.baseUrl}/api/scores/reset`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Все результаты сброшены:', data);
+            return data;
+        })
+        .catch(error => {
+            console.error('Ошибка сброса результатов:', error);
+            throw error;
+        });
     }
 }
