@@ -18,6 +18,10 @@ export default class GameView {
                     <h2 id="click-counter">Счёт: 0</h2>
                     <button id="click-button" class="big-button">Нажми меня!</button>
                 </div>
+                <div id="leaderboard" style="margin-top: 20px; padding: 10px; background-color: white; border-radius: 5px;">
+                    <h3>Таблица лидеров</h3>
+                    <div id="leaderboard-content">Загрузка таблицы лидеров...</div>
+                </div>
             </div>
         `;
         
@@ -72,6 +76,38 @@ export default class GameView {
         if (serverStatusElement) {
             serverStatusElement.textContent = 'Ошибка соединения с сервером';
         }
+    }
+
+    // Отображает таблицу лидеров
+    renderLeaderboard(leaderboard, currentUserId) {
+        const leaderboardContent = document.getElementById('leaderboard-content');
+        if (!leaderboardContent) return;
+
+        if (!leaderboard || leaderboard.length === 0) {
+            leaderboardContent.innerHTML = '<p>Нет данных</p>';
+            return;
+        }
+
+        const leaderboardHtml = leaderboard.map((item, index) => {
+            const isCurrentUser = item.userId == currentUserId;
+            const highlightClass = isCurrentUser ? 'current-user' : '';
+            return `
+                <div class="leaderboard-item ${highlightClass}">
+                    <span class="rank">#${index + 1}</span>
+                    <span class="user-id">ID: ${item.userId}</span>
+                    <span class="score">${item.score}</span>
+                </div>
+            `;
+        }).join('');
+
+        leaderboardContent.innerHTML = `
+            <div class="leaderboard-header">
+                <span class="rank">Место</span>
+                <span class="user-id">Пользователь</span>
+                <span class="score">Очки</span>
+            </div>
+            ${leaderboardHtml}
+        `;
     }
 
     // Метод наблюдателя для обновления представления при изменении модели

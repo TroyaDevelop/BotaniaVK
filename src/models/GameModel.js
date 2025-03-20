@@ -20,6 +20,13 @@ export default class GameModel {
         return this.score;
     }
 
+    // Устанавливает счёт
+    setScore(score) {
+        this.score = score;
+        this.notifyObservers('scoreChanged', this.score);
+        return this.score;
+    }
+
     // Сбрасывает счёт
     resetScore() {
         this.score = 0;

@@ -1,12 +1,44 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
 
-// Временное хранилище результатов
-const userScores = {};
+// Путь к файлу с результатами
+const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
+
+// Создаем директорию для данных, если она не существует
+if (!fs.existsSync(path.join(__dirname, 'data'))) {
+  fs.mkdirSync(path.join(__dirname, 'data'));
+}
+
+// Загружаем результаты из файла или создаем пустой объект
+let userScores = {};
+try {
+  if (fs.existsSync(SCORES_FILE)) {
+    const data = fs.readFileSync(SCORES_FILE, 'utf8');
+    userScores = JSON.parse(data);
+    console.log('Результаты загружены из файла:', Object.keys(userScores).length, 'записей');
+  } else {
+    // Создаем пустой файл, если он не существует
+    fs.writeFileSync(SCORES_FILE, JSON.stringify({}), 'utf8');
+    console.log('Создан новый файл для результатов');
+  }
+} catch (error) {
+  console.error('Ошибка при загрузке результатов:', error);
+}
+
+// Функция для сохранения результатов в файл
+function saveScoresToFile() {
+  try {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify(userScores, null, 2), 'utf8');
+    console.log('Результаты сохранены в файл');
+  } catch (error) {
+    console.error('Ошибка при сохранении результатов:', error);
+  }
+}
 
 // Middleware
 app.use(cors({
@@ -41,6 +73,8 @@ app.post('/api/score', (req, res) => {
   // Сохраняем результат, если он лучше предыдущего
   if (!userScores[userId] || score > userScores[userId]) {
     userScores[userId] = score;
+    // Сохраняем в файл при каждом обновлении
+    saveScoresToFile();
   }
   
   res.json({ status: 'ok', savedScore: userScores[userId] });
@@ -67,6 +101,14 @@ app.get('/api/leaderboard', (req, res) => {
   res.json({ status: 'ok', leaderboard });
 });
 
+// API эндпоинт для сброса всех результатов (для тестирования)
+app.delete('/api/scores/reset', (req, res) => {
+  console.log('[API] Сброс всех результатов');
+  userScores = {};
+  saveScoresToFile();
+  res.json({ status: 'ok', message: 'Все результаты сброшены' });
+});
+
 // Статические файлы ПОСЛЕ API маршрутов
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -79,4 +121,11 @@ app.get('*', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Express сервер запущен на порту ${PORT} (0.0.0.0)`);
   console.log(`API доступен по адресу http://localhost:${PORT}/api/status`);
+});
+
+// Сохраняем результаты при завершении работы сервера
+process.on('SIGINT', () => {
+  console.log('Сервер завершает работу, сохраняем результаты...');
+  saveScoresToFile();
+  process.exit();
 });

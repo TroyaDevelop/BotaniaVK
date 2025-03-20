@@ -75,3 +75,57 @@ body {
     background-color: #f5f5f5;
     border-radius: 5px;
 }
+
+/* Добавляем эти стили в конец файла */
+
+/* Стили для таблицы лидеров */
+#leaderboard {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#leaderboard h3 {
+    margin-top: 0;
+    color: #333;
+    text-align: center;
+}
+
+.leaderboard-header, .leaderboard-item {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px;
+    padding: 8px 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.leaderboard-header {
+    font-weight: bold;
+    color: #666;
+    border-bottom: 2px solid #ddd;
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-item.current-user {
+    background-color: #e6f7ff;
+    font-weight: bold;
+}
+
+.rank {
+    text-align: center;
+}
+
+.score {
+    text-align: right;
+    font-weight: bold;
+}
+
+.user-id {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
