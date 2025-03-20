@@ -3,6 +3,9 @@ import vkBridge from '@vkontakte/vk-bridge';
 // Флаг для отслеживания, инициализирована ли уже игра
 let gameInitialized = false;
 
+// Счетчик кликов
+let clickCount = 0;
+
 // Инициализация VK Bridge
 export function initVKBridge() {
     vkBridge.send('VKWebAppInit')
@@ -18,6 +21,7 @@ export function displayUserInfo(userInfo) {
             <img src="${userInfo.photo_200}" alt="Аватар" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px;">
             <strong>${userInfo.first_name} ${userInfo.last_name}</strong>
         `;
+        userInfoElement.setAttribute('data-user-id', userInfo.id);
     }
 }
 
@@ -42,29 +46,51 @@ export function getUserInfo() {
 
 // Функция инициализации приложения - вызывается только один раз при загрузке
 export function initApp() {
-    if (typeof vkBridge !== 'undefined') {
-        initVKBridge();
+    // Инициализируем VK Bridge
+    initVKBridge();
 
-        getUserInfo()
-            .then(data => {
-                initGame(data); // Запускаем игру с данными пользователя
-            })
-            .catch(error => {
-                console.error('Ошибка получения информации о пользователе:', error);
-                initGame({ id: 0, first_name: 'Гость' });
-            });
+    // Получаем информацию о пользователе и запускаем игру
+    getUserInfo()
+        .then(data => {
+            initGame(data); // Запускаем игру с данными пользователя
+        })
+        .catch(error => {
+            console.error('Ошибка получения информации о пользователе:', error);
+            initGame({ id: 0, first_name: 'Гость' });
+        });
 
-        // Публикация на стене
-        window.postToWall = function() {
-            postToWall();
-        };
-    } else {
-        console.warn('VK Bridge не найден. Запуск в тестовом режиме.');
-        const userInfoElement = document.getElementById('user-info');
-        if (userInfoElement) {
-            userInfoElement.textContent = 'Тестовый режим (VK Bridge недоступен)';
-        }
-        initGame({ id: 0, first_name: 'Тестировщик' });
+    // Публикация на стене
+    window.postToWall = function() {
+        postToWall();
+    };
+}
+
+// Функция для обработки клика
+export function handleClick() {
+    clickCount++;
+    updateClickCounter();
+    
+    // Сохраняем результат каждые 5 кликов
+    if (clickCount % 5 === 0) {
+        const userId = document.getElementById('user-info').getAttribute('data-user-id') || 0;
+        saveScore(userId, clickCount);
+    }
+    
+    // Анимация при клике
+    const button = document.getElementById('click-button');
+    if (button) {
+        button.classList.add('button-clicked');
+        setTimeout(() => {
+            button.classList.remove('button-clicked');
+        }, 100);
+    }
+}
+
+// Обновление счетчика кликов
+export function updateClickCounter() {
+    const counterElement = document.getElementById('click-counter');
+    if (counterElement) {
+        counterElement.textContent = `Счёт: ${clickCount}`;
     }
 }
 
@@ -107,11 +133,18 @@ export function initGame(userData) {
         gameElement.innerHTML = `
             <div>
                 <p>Игра запущена для игрока ${userData.first_name}!</p>
-                <div id="game-canvas" style="width: 100%; height: 300px; background-color: #f0f0f0; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
-                    Здесь будет ваша игра
+                <div id="game-canvas" style="width: 100%; height: 300px; background-color: #f0f0f0; border: 1px solid #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <h2 id="click-counter">Счёт: 0</h2>
+                    <button id="click-button" class="big-button">Нажми меня!</button>
                 </div>
             </div>
         `;
+        
+        // Добавляем обработчик для кнопки клика
+        const clickButton = document.getElementById('click-button');
+        if (clickButton) {
+            clickButton.addEventListener('click', handleClick);
+        }
     }
     
     // Отмечаем, что игра инициализирована
@@ -121,7 +154,7 @@ export function initGame(userData) {
 // Экспортируемая функция публикации на стене
 export function postToWall() {
     vkBridge.send('VKWebAppShowWallPostBox', {
-        message: 'Я играю в Botania VK! Присоединяйтесь ко мне!',
+        message: `Я набрал ${clickCount} очков в Botania VK! Присоединяйтесь ко мне!`,
         attachments: 'https://vk.com/app53221746' // ID вашего приложения
     })
     .then(data => {
@@ -152,4 +185,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // Экспорт функции для проверки доступности VK Bridge
 export function isVKBridgeAvailable() {
     return typeof vkBridge !== 'undefined';
+}
+
+// Отправка результата на сервер
+export function saveScore(userId, score) {
+    fetch('/api/score', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, score })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Результат сохранен:', data);
+    })
+    .catch(error => {
+        console.error('Ошибка сохранения результата:', error);
+    });
 }
