@@ -1,54 +1,52 @@
-import bridge from '@vkontakte/vk-bridge';
+// Импортируем vk-bridge с CDN как ESM-модуль
+import * as VKBridgeModule from 'https://unpkg.com/@vkontakte/vk-bridge/dist/index.mjs';
+
+// Создаем объект vkBridge из модуля
+const vkBridge = VKBridgeModule.default;
 
 // Инициализация VK Bridge
-if (window.vkBridge) {
-    vkBridge.send('VKWebAppInit');
+vkBridge.send('VKWebAppInit');
 
-    // Отображение информации о пользователе на странице
-    function displayUserInfo(userInfo) {
-        const userInfoElement = document.getElementById('user-info');
-        if (userInfoElement) {
-            userInfoElement.innerHTML = `
-                <img src="${userInfo.photo_200}" alt="Аватар" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px;">
-                <strong>${userInfo.first_name} ${userInfo.last_name}</strong>
-            `;
-        }
+// Отображение информации о пользователе на странице
+function displayUserInfo(userInfo) {
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+        userInfoElement.innerHTML = `
+            <img src="${userInfo.photo_200}" alt="Аватар" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px;">
+            <strong>${userInfo.first_name} ${userInfo.last_name}</strong>
+        `;
     }
-
-    // Проверка авторизации пользователя
-    vkBridge.send('VKWebAppGetUserInfo')
-        .then(data => {
-            console.log('Получена информация о пользователе:', data);
-            displayUserInfo(data);
-            initGame(data); // Запускаем игру с данными пользователя
-        })
-        .catch(error => {
-            console.error('Ошибка получения информации о пользователе:', error);
-            document.getElementById('user-info').textContent = 'Не удалось загрузить информацию о пользователе';
-            // Все равно инициализируем игру даже без данных пользователя
-            initGame({ id: 0, first_name: 'Гость' });
-        });
-
-    // Публикация на стене
-    window.postToWall = function() {
-        vkBridge.send('VKWebAppShowWallPostBox', {
-            message: 'Я играю в Botania VK! Присоединяйтесь ко мне!',
-            attachments: 'https://vk.com/app12345678' // Замените на ID вашего приложения
-        })
-        .then(data => {
-            console.log('Пост опубликован:', data);
-            alert('Пост успешно опубликован!');
-        })
-        .catch(error => {
-            console.error('Ошибка публикации:', error);
-            alert('Не удалось опубликовать пост');
-        });
-    };
-} else {
-    console.warn('VK Bridge не найден. Запуск в тестовом режиме.');
-    document.getElementById('user-info').textContent = 'Тестовый режим (VK Bridge недоступен)';
-    initGame({ id: 0, first_name: 'Тестировщик' });
 }
+
+// Проверка авторизации пользователя
+vkBridge.send('VKWebAppGetUserInfo')
+    .then(data => {
+        console.log('Получена информация о пользователе:', data);
+        displayUserInfo(data);
+        initGame(data); // Запускаем игру с данными пользователя
+    })
+    .catch(error => {
+        console.error('Ошибка получения информации о пользователе:', error);
+        document.getElementById('user-info').textContent = 'Не удалось загрузить информацию о пользователе';
+        // Все равно инициализируем игру даже без данных пользователя
+        initGame({ id: 0, first_name: 'Гость' });
+    });
+
+// Публикация на стене
+window.postToWall = function() {
+    vkBridge.send('VKWebAppShowWallPostBox', {
+        message: 'Я играю в Botania VK! Присоединяйтесь ко мне!',
+        attachments: 'https://vk.com/app53221746' // ID вашего приложения
+    })
+    .then(data => {
+        console.log('Пост опубликован:', data);
+        alert('Пост успешно опубликован!');
+    })
+    .catch(error => {
+        console.error('Ошибка публикации:', error);
+        alert('Не удалось опубликовать пост');
+    });
+};
 
 // Инициализация игры
 function initGame(userData) {
