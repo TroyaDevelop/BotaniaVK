@@ -3,30 +3,31 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 5173; // Оставляем 5173 для Express
+const PORT = process.env.PORT || 5173;
 
 // Middleware
 app.use(cors({
-  origin: '*', // Разрешаем запросы с любого источника для разработки
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
 app.use(express.json());
 
-// Для отладки запросов
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+// Важно: устанавливаем Content-Type для API
+app.use('/api', (req, res, next) => {
+  res.set('Content-Type', 'application/json');
   next();
 });
 
-// Статические файлы из папки dist (собранные Webpack)
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// API эндпоинт
+// API эндпоинт - должен быть определен ДО static и маршрута '*'
 app.get('/api/status', (req, res) => {
-  console.log('API status endpoint hit');
-  res.json({ status: 'ok', message: 'API работает' });
+  console.log('[API] Status endpoint hit');
+  res.json({ status: 'ok', message: 'API работает на порту ' + PORT });
 });
+
+// Статические файлы ПОСЛЕ API маршрутов
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Все остальные GET-запросы перенаправляем на index.html
 app.get('*', (req, res) => {
@@ -34,6 +35,7 @@ app.get('*', (req, res) => {
 });
 
 // Запуск сервера
-app.listen(PORT, () => {
-  console.log(`Сервер запущен на порту ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Express сервер запущен на порту ${PORT} (0.0.0.0)`);
+  console.log(`API доступен по адресу http://localhost:${PORT}/api/status`);
 });

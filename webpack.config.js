@@ -38,13 +38,21 @@ module.exports = {
       directory: path.join(__dirname, 'dist')
     },
     hot: true,
-    port: 3001, // Изменяем порт webpack-dev-server, чтобы избежать конфликта
+    port: 3001, // Webpack dev server на порту 3001
     proxy: {
       '/api': {
-        target: 'http://localhost:5173', // Указываем порт Express
+        target: 'http://localhost:5173', // Express на порту 5173
         secure: false,
         changeOrigin: true
       }
+    },
+    // Разрешаем доступ с любого хоста (решает проблему Invalid Host header)
+    allowedHosts: 'all',
+    // Дополнительные настройки для решения проблем с хостами
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
     }
   }
 };

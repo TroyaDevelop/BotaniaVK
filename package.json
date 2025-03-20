@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev:server": "nodemon server.js",
-    "dev:client": "webpack serve --mode development",
+    "dev:client": "webpack serve --mode development --host 0.0.0.0",
     "build": "webpack --mode production",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
   },
