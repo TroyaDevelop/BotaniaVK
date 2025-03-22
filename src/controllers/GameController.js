@@ -8,6 +8,11 @@ export default class GameController {
         this.userModel = userModel;
         this.apiService = apiService;
         
+        // Устанавливаем apiService в модель, если он отсутствует
+        if (this.gameModel && !this.gameModel.apiService) {
+            this.gameModel.apiService = this.apiService;
+        }
+        
         // Добавляем представление как наблюдателя модели
         this.gameModel.addObserver(this.gameView);
         
@@ -21,8 +26,13 @@ export default class GameController {
     // Инициализирует игровую модель и интерфейс
     async initGame() {
         try {
-            // Сначала загружаем данные пользователя
-            await this.gameModel.loadUserData();
+            // Сначала загружаем данные пользователя, если метод доступен
+            if (typeof this.gameModel.loadUserData === 'function') {
+                await this.gameModel.loadUserData();
+            } else {
+                // Альтернативная загрузка данных
+                await this.loadUserGameData();
+            }
             
             // Затем инициализируем игровой интерфейс
             const userName = this.userModel.getUserData().first_name || 'Гость';

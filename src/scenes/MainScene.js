@@ -262,6 +262,14 @@ export default class MainScene extends Phaser.Scene {
             this.gameModel.plant.lastWaterTime = this.lastWaterTime;
             this.gameModel.plant.growthStage = this.growthStage;
             
+            // Сохраняем данные в профиле пользователя через API, если доступен метод
+            if (typeof this.gameModel.saveUserData === 'function') {
+                this.gameModel.saveUserData({
+                    plant: this.gameModel.plant,
+                    resources: this.gameModel.resources
+                });
+            }
+            
             // Уведомляем наблюдателей
             this.gameModel.notifyObservers('resourcesChanged', this.gameModel.resources);
             this.gameModel.notifyObservers('plantChanged', this.gameModel.plant);
@@ -418,6 +426,14 @@ export default class MainScene extends Phaser.Scene {
                 max: this.maxWater,
                 lastRegenTime: this.lastWaterRegenTime
             };
+            
+            // Сохраняем данные в профиле пользователя через API, если доступен метод
+            if (typeof this.gameModel.saveUserData === 'function') {
+                this.gameModel.saveUserData({
+                    plant: this.gameModel.plant,
+                    resources: this.gameModel.resources
+                });
+            }
             
             // Сохраняем данные в профиле пользователя через API
             this.gameModel.saveUserData({

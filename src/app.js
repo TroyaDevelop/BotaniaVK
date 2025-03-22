@@ -28,8 +28,8 @@ class App {
         // Показываем информацию о тестовом режиме, если нужно
         this.testModeService.showTestModeInfo();
         
-        // Создаем модели
-        this.gameModel = new GameModel();
+        // Создаем модели, передавая API сервис в GameModel
+        this.gameModel = new GameModel(this.apiService);
         this.userModel = new UserModel();
         
         // Создаем представления
@@ -66,7 +66,7 @@ class App {
             await this.userController.loadUserInfo();
             
             // Инициализируем игру
-            this.gameController.initGame();
+            await this.gameController.initGame();
             
             // Делаем доступным метод публикации через window
             window.postToWall = () => {

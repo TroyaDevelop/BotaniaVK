@@ -2,7 +2,7 @@
  * Модель игры - отвечает за хранение и изменение данных игры
  */
 export default class GameModel {
-    constructor(apiService) {
+    constructor(apiService = null) {
         this.initialized = false;
         this.apiService = apiService;
         
@@ -18,7 +18,11 @@ export default class GameModel {
         
         // Инициализируем ресурсы игрока
         this.resources = {
-            water: 5,                 // Количество доступной воды (обратная совместимость)
+            water: {
+                current: 5,
+                max: 5,
+                lastRegenTime: Date.now()
+            },
             fertilizer: 0,            // Количество удобрений
             seeds: 1                  // Количество семян
         };
@@ -29,12 +33,25 @@ export default class GameModel {
 
     // Полив растения
     waterPlant() {
-        if (this.resources.water < 10) {
+        // Определяем текущее значение воды в зависимости от формата
+        let currentWater;
+        
+        if (typeof this.resources.water === 'object') {
+            currentWater = this.resources.water.current;
+        } else {
+            currentWater = this.resources.water;
+        }
+        
+        if (currentWater <= 0) {
             return false; // Недостаточно воды
         }
         
         // Уменьшаем количество воды
-        this.resources.water -= 10;
+        if (typeof this.resources.water === 'object') {
+            this.resources.water.current--;
+        } else {
+            this.resources.water--;
+        }
         
         // Обновляем время последнего полива
         this.plant.lastWaterTime = Date.now();
@@ -146,7 +163,14 @@ export default class GameModel {
     saveUserData(data) {
         if (!this.initialized) {
             console.warn('Попытка сохранить данные без инициализации модели');
-            return;
+            return Promise.resolve(false);
+        }
+        
+        // Если apiService не определен, используем только localStorage
+        if (!this.apiService) {
+            console.log('ApiService не найден, данные сохранены только локально', data);
+            localStorage.setItem('userGameData', JSON.stringify(data));
+            return Promise.resolve(true);
         }
         
         // Если мы в тестовом режиме, имитируем сохранение
@@ -165,35 +189,26 @@ export default class GameModel {
             })
             .catch(error => {
                 console.error('Ошибка при сохранении данных пользователя:', error);
+                // Сохраняем в localStorage как резервную копию
+                localStorage.setItem('userGameData', JSON.stringify(data));
                 return false;
             });
     }
 
     // Загрузка данных пользователя через API
     loadUserData() {
+        // Если apiService не определен, используем только localStorage
+        if (!this.apiService) {
+            console.log('ApiService не найден, загружаем данные только из localStorage');
+            return this.loadLocalData();
+        }
+        
         // Если мы в тестовом режиме, имитируем загрузку
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            const savedData = localStorage.getItem('userGameData');
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    console.log('Тестовый режим: данные загружены локально', data);
-                    
-                    // Обновляем данные в модели
-                    if (data.plant) this.plant = { ...this.plant, ...data.plant };
-                    if (data.resources) this.resources = { ...this.resources, ...data.resources };
-                    
-                    return Promise.resolve(data);
-                } catch (e) {
-                    console.error('Ошибка при загрузке локальных данных:', e);
-                    return Promise.resolve(null);
-                }
-            }
-            return Promise.resolve(null);
+            return this.loadLocalData();
         }
         
         // Здесь будет реальный запрос к API для загрузки данных
-        // Например:
         return this.apiService.loadUserData()
             .then(data => {
                 if (data) {
@@ -207,8 +222,30 @@ export default class GameModel {
             })
             .catch(error => {
                 console.error('Ошибка при загрузке данных пользователя:', error);
-                return null;
+                // При ошибке загружаем из localStorage
+                return this.loadLocalData();
             });
+    }
+
+    // Вспомогательный метод для загрузки данных из localStorage
+    loadLocalData() {
+        const savedData = localStorage.getItem('userGameData');
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+                console.log('Данные загружены из localStorage', data);
+                
+                // Обновляем данные в модели
+                if (data.plant) this.plant = { ...this.plant, ...data.plant };
+                if (data.resources) this.resources = { ...this.resources, ...data.resources };
+                
+                return Promise.resolve(data);
+            } catch (e) {
+                console.error('Ошибка при загрузке локальных данных:', e);
+                return Promise.resolve(null);
+            }
+        }
+        return Promise.resolve(null);
     }
 
     // Базовые методы из предыдущей версии
