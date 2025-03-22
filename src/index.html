@@ -7,14 +7,23 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="user-info">Загрузка информации о пользователе...</div>
+        <header>
+            <div id="user-info">Загрузка информации о пользователе...</div>
+            <div id="test-info" style="display: none; background-color: #ffeb3b; padding: 5px 10px; margin-bottom: 10px; border-radius: 4px;">
+                <strong>Тестовый режим активен.</strong> Игра работает вне ВК для отладки.
+            </div>
+        </header>
         <div id="game">
             <!-- Здесь будет содержимое игры -->
             <h1>Botania VK</h1>
             <p>Добро пожаловать в игру!</p>
             <div id="server-status">Проверка соединения с сервером...</div>
+            <!-- Обновим высоту контейнера -->
+            <div id="phaser-game" style="width: 100%; height: 800px;"></div>
         </div>
-        <button class="button" id="share-button">Поделиться игрой</button>
+        <footer>
+            <button class="button" id="share-button">Поделиться игрой</button>
+        </footer>
     </div>
     <!-- Webpack будет автоматически добавлять скрипты -->
 </body>

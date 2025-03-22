@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import createGameConfig from '../config/phaser-config';
+import TestModeService from '../services/TestModeService';
 
 /**
  * Представление игры с использованием Phaser
@@ -9,19 +10,26 @@ export default class GameView {
         this.gameElement = document.getElementById('game');
         this.game = null;
         this.gameModel = null;
+        
+        // Инициализируем сервис тестового режима
+        this.testModeService = new TestModeService();
     }
 
     // Инициализация игрового интерфейса
     render(userName) {
         if (!this.gameElement) return;
+        
+        // Определяем, находимся ли в тестовом режиме
+        const isTestMode = this.testModeService.isTestMode();
 
-        // Создаем контейнер для игры
+        // Создаем контейнер для игры с новой высотой
         this.gameElement.innerHTML = `
             <div>
-                <p>Игра запущена для игрока ${userName}!</p>
-                <div id="phaser-game" style="width: 100%; height: 600px;"></div>
+                <p>Игра запущена для игрока ${userName}! ${isTestMode ? '<span class="test-mode-badge">ТЕСТОВЫЙ РЕЖИМ</span>' : ''}</p>
+                <div id="phaser-game" style="width: 100%; height: 800px;"></div>
                 <div id="game-controls" style="margin-top: 10px; text-align: center;">
                     <button id="restart-game" class="button">Перезапустить</button>
+                    ${isTestMode ? '<button id="debug-button" class="button">Отладка данных</button>' : ''}
                 </div>
                 <div id="server-status">Проверка соединения с сервером...</div>
             </div>
@@ -50,6 +58,16 @@ export default class GameView {
             restartButton.addEventListener('click', () => {
                 this.restartGame();
             });
+        }
+        
+        // Добавляем кнопку отладки для тестового режима
+        if (this.testModeService.isTestMode()) {
+            const debugButton = document.getElementById('debug-button');
+            if (debugButton) {
+                debugButton.addEventListener('click', () => {
+                    this.testModeService.showDebugInfo(this.gameModel);
+                });
+            }
         }
     }
 
@@ -94,20 +112,38 @@ export default class GameView {
                 // Обновляем состояние растения в сцене
                 mainScene.growthStage = data.growthStage;
                 mainScene.lastWaterTime = data.lastWaterTime;
-                mainScene.plant.setTexture(`plant_stage${data.growthStage}`);
+                
+                if (mainScene.plant) {
+                    mainScene.plant.setTexture(`plant_stage${data.growthStage}`);
+                }
                 
                 const statuses = ['Семя', 'Росток', 'Бутон', 'Цветок'];
-                mainScene.statusText.setText(`Статус: ${statuses[data.growthStage]}`);
-                
-                if (data.waterNeeded) {
-                    mainScene.statusText.setText(`Статус: ${statuses[data.growthStage]} (нужен полив)`);
+                if (mainScene.statusText) {
+                    mainScene.statusText.setText(`Статус: ${statuses[data.growthStage]}`);
+                    
+                    if (data.waterNeeded) {
+                        mainScene.statusText.setText(`Статус: ${statuses[data.growthStage]} (нужен полив)`);
+                    }
                 }
             }
             
             if (event === 'resourcesChanged') {
                 // Обновляем ресурсы в сцене
-                mainScene.waterLevel = data.water;
-                mainScene.waterText.setText(`Вода: ${Math.floor(data.water)}%`);
+                if (data.water) {
+                    // Проверяем формат данных воды
+                    if (typeof data.water === 'object' && data.water !== null) {
+                        // Новый формат (объект с полями)
+                        mainScene.currentWater = data.water.current;
+                        mainScene.maxWater = data.water.max;
+                        mainScene.lastWaterRegenTime = data.water.lastRegenTime;
+                    } else {
+                        // Старый формат (просто число)
+                        mainScene.currentWater = data.water;
+                    }
+                    
+                    // Обновляем UI
+                    mainScene.updateWaterUI();
+                }
             }
         }
     }

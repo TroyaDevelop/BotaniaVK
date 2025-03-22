@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin'); // Добавляем импорт плагина
 
 module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
@@ -7,7 +8,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    clean: true
+    clean: true // Очистка директории dist перед сборкой
   },
   module: {
     rules: [
@@ -31,7 +32,16 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: 'index.html'
-    })
+    }),
+    // Добавляем плагин для копирования ассетов
+    new CopyPlugin({
+      patterns: [
+        { 
+          from: 'assets', // Путь к папке с ассетами относительно корня проекта
+          to: 'assets' // Путь назначения относительно output.path (dist)
+        }
+      ],
+    }),
   ],
   devServer: {
     static: {

@@ -18,47 +18,32 @@ export default class GameController {
         this.updateInterval = null;
     }
 
-    // Инициализирует игру с данными пользователя
-    initGame() {
-        if (this.gameModel.isInitialized()) {
-            console.log('Игра уже инициализирована, пропускаем повторную инициализацию');
-            return;
+    // Инициализирует игровую модель и интерфейс
+    async initGame() {
+        try {
+            // Сначала загружаем данные пользователя
+            await this.gameModel.loadUserData();
+            
+            // Затем инициализируем игровой интерфейс
+            const userName = this.userModel.getUserData().first_name || 'Гость';
+            this.gameView.render(userName);
+            
+            // И наконец инициализируем Phaser
+            this.gameView.initPhaser(this.gameModel);
+            
+            // Добавляем представление как наблюдателя модели
+            this.gameModel.addObserver(this.gameView);
+            
+            console.log('Игра успешно инициализирована');
+            
+            // Устанавливаем флаг инициализации
+            this.gameModel.setInitialized(true);
+            
+            return true;
+        } catch (error) {
+            console.error('Ошибка инициализации игры:', error);
+            return false;
         }
-
-        const userData = this.userModel.getUserData();
-        console.log('Инициализация игры для пользователя:', userData.id);
-        
-        // Проверка статуса сервера
-        this.apiService.checkStatus()
-            .then(data => {
-                this.gameView.updateServerStatus(data.message);
-            })
-            .catch(error => {
-                this.gameView.showServerError();
-                console.error('Ошибка получения статуса сервера:', error);
-            });
-        
-        // Отрисовываем игру
-        this.gameView.render(userData.firstName);
-        
-        // Инициализируем Phaser
-        this.gameView.initPhaser(this.gameModel);
-        
-        // Загружаем данные о растении пользователя
-        this.loadUserGameData();
-        
-        // Устанавливаем интервал для автосохранения состояния игры
-        this.saveInterval = setInterval(() => {
-            this.saveUserGameData();
-        }, 60000); // Сохраняем каждую минуту
-        
-        // Устанавливаем интервал для обновления состояния игры
-        this.updateInterval = setInterval(() => {
-            this.updateGameState();
-        }, 5000); // Обновляем каждые 5 секунд
-        
-        // Отмечаем, что игра инициализирована
-        this.gameModel.setInitialized(true);
     }
 
     // Загружает данные о растении и ресурсах пользователя
@@ -73,7 +58,11 @@ export default class GameController {
                     this.gameModel.setPlantData(plantData);
                 }
             })
-            .catch(error => console.error('Ошибка загрузки данных о растении:', error));
+            .catch(error => {
+                console.error('Ошибка загрузки данных о растении:', error);
+                // При ошибке используем локальные данные
+                this.loadLocalPlantData();
+            });
 
         // Загружаем данные о ресурсах
         this.apiService.getResourcesData(userId)
@@ -82,7 +71,11 @@ export default class GameController {
                     this.gameModel.setResourcesData(resourcesData);
                 }
             })
-            .catch(error => console.error('Ошибка загрузки данных о ресурсах:', error));
+            .catch(error => {
+                console.error('Ошибка загрузки данных о ресурсах:', error);
+                // При ошибке используем локальные данные
+                this.loadLocalResourcesData();
+            });
 
         // Загружаем счет
         this.apiService.getScore(userId)
@@ -91,7 +84,39 @@ export default class GameController {
                     this.gameModel.setScore(score);
                 }
             })
-            .catch(error => console.error('Ошибка загрузки счета:', error));
+            .catch(error => {
+                console.error('Ошибка загрузки счета:', error);
+            });
+    }
+
+    // Загружает данные о растении из localStorage
+    loadLocalPlantData() {
+        const savedData = localStorage.getItem('plantData');
+        
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+                this.gameModel.setPlantData(data);
+                console.log('Данные о растении загружены из localStorage');
+            } catch (e) {
+                console.error('Ошибка при парсинге данных о растении из localStorage:', e);
+            }
+        }
+    }
+
+    // Загружает данные о ресурсах из localStorage
+    loadLocalResourcesData() {
+        const savedData = localStorage.getItem('resourcesData');
+        
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+                this.gameModel.setResourcesData(data);
+                console.log('Данные о ресурсах загружены из localStorage');
+            } catch (e) {
+                console.error('Ошибка при парсинге данных о ресурсах из localStorage:', e);
+            }
+        }
     }
 
     // Сохраняет данные о растении и ресурсах пользователя
@@ -102,6 +127,11 @@ export default class GameController {
         const plantData = this.gameModel.getPlantState();
         const resourcesData = this.gameModel.getResources();
         const score = this.gameModel.getScore();
+
+        // Сохраняем локально в любом случае
+        localStorage.setItem('plantData', JSON.stringify(plantData));
+        localStorage.setItem('resourcesData', JSON.stringify(resourcesData));
+        localStorage.setItem('score', JSON.stringify(score));
 
         // Сохраняем данные о растении
         this.apiService.savePlantData(userId, plantData)

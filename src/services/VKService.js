@@ -6,11 +6,40 @@ import vkBridge from '@vkontakte/vk-bridge';
 export default class VKService {
     constructor() {
         this.initialized = false;
+        this.testMode = !this.isVKBridgeAvailable();
+        
+        // Тестовые данные пользователя для локальной разработки
+        this.testUser = {
+            id: 1234567890,
+            first_name: 'Тестовый',
+            last_name: 'Пользователь',
+            photo_200: 'https://vk.com/images/camera_200.png'
+        };
+        
+        // Список тестовых друзей
+        this.testFriends = [
+            { id: 987654321, first_name: 'Друг', last_name: 'Первый', photo_100: 'https://vk.com/images/camera_100.png' },
+            { id: 876543210, first_name: 'Друг', last_name: 'Второй', photo_100: 'https://vk.com/images/camera_100.png' },
+            { id: 765432109, first_name: 'Друг', last_name: 'Третий', photo_100: 'https://vk.com/images/camera_100.png' }
+        ];
+        
+        console.log(this.testMode ? 'VK Bridge не обнаружен, включен тестовый режим' : 'VK Bridge обнаружен');
+    }
+
+    // Проверяет доступность VK Bridge
+    isVKBridgeAvailable() {
+        return typeof vkBridge !== 'undefined' && !window.location.href.includes('localhost');
     }
 
     // Инициализирует VK Bridge
     init() {
         if (this.initialized) return Promise.resolve();
+        
+        if (this.testMode) {
+            console.log('Тестовый режим: VK Bridge инициализирован (эмуляция)');
+            this.initialized = true;
+            return Promise.resolve();
+        }
 
         return vkBridge.send('VKWebAppInit')
             .then(() => {
@@ -19,12 +48,20 @@ export default class VKService {
             })
             .catch(error => {
                 console.error('Ошибка инициализации VK Bridge:', error);
-                throw error;
+                // Включаем тестовый режим при ошибке
+                this.testMode = true;
+                this.initialized = true;
+                return Promise.resolve(); // Продолжаем выполнение в тестовом режиме
             });
     }
 
     // Получает информацию о пользователе
     getUserInfo() {
+        if (this.testMode) {
+            console.log('Тестовый режим: возвращаем тестового пользователя');
+            return Promise.resolve(this.testUser);
+        }
+
         return vkBridge.send('VKWebAppGetUserInfo')
             .then(data => {
                 console.log('Получена информация о пользователе:', data);
@@ -32,12 +69,19 @@ export default class VKService {
             })
             .catch(error => {
                 console.error('Ошибка получения информации о пользователе:', error);
-                throw error;
+                // В случае ошибки возвращаем тестового пользователя
+                console.log('Возвращаем тестового пользователя после ошибки');
+                return this.testUser;
             });
     }
 
     // Публикует сообщение на стене пользователя
     postToWall(message, attachments) {
+        if (this.testMode) {
+            console.log('Тестовый режим: эмуляция публикации на стене', { message, attachments });
+            return Promise.resolve({ post_id: Date.now() });
+        }
+
         return vkBridge.send('VKWebAppShowWallPostBox', {
             message,
             attachments
@@ -54,6 +98,11 @@ export default class VKService {
 
     // Получает список друзей пользователя
     getFriends() {
+        if (this.testMode) {
+            console.log('Тестовый режим: возвращаем тестовых друзей');
+            return Promise.resolve(this.testFriends);
+        }
+
         return vkBridge.send('VKWebAppGetFriends')
             .then(data => {
                 console.log('Получен список друзей:', data);
@@ -61,12 +110,18 @@ export default class VKService {
             })
             .catch(error => {
                 console.error('Ошибка получения списка друзей:', error);
-                throw error;
+                // В случае ошибки возвращаем тестовых друзей
+                return this.testFriends;
             });
     }
 
     // Проверяет, доступен ли VK Bridge
     isAvailable() {
-        return typeof vkBridge !== 'undefined';
+        return !this.testMode;
+    }
+
+    // Проверяет, включен ли тестовый режим
+    isTestMode() {
+        return this.testMode;
     }
 }

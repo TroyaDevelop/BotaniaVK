@@ -15,10 +15,19 @@ import UserController from './controllers/UserController.js';
 // Импорт сервисов
 import VKService from './services/VKService.js';
 import ApiService from './services/ApiService.js';
+import TestModeService from './services/TestModeService.js';
 
 // Создаем глобальный экземпляр приложения
 class App {
     constructor() {
+        // Создаем сервисы
+        this.vkService = new VKService();
+        this.apiService = new ApiService();
+        this.testModeService = new TestModeService();
+        
+        // Показываем информацию о тестовом режиме, если нужно
+        this.testModeService.showTestModeInfo();
+        
         // Создаем модели
         this.gameModel = new GameModel();
         this.userModel = new UserModel();
@@ -27,12 +36,8 @@ class App {
         this.gameView = new GameView();
         this.userView = new UserView();
         
-        // Создаем сервисы
-        this.vkService = new VKService();
-        this.apiService = new ApiService();
-        
         // Создаем контроллеры
-        this.userController = new UserController(this.userModel, this.userView, this.vkService);
+        this.userController = new UserController(this.userModel, this.userView, this.vkService, this.testModeService);
         this.gameController = new GameController(this.gameModel, this.gameView, this.userModel, this.apiService);
         
         // Инициализируем кнопку "Поделиться"
@@ -46,6 +51,11 @@ class App {
             shareButton.addEventListener('click', () => {
                 this.userController.postToWall(this.gameModel.getScore());
             });
+            
+            // Обновляем текст кнопки для тестового режима
+            if (this.testModeService.isTestMode()) {
+                shareButton.textContent = 'Поделиться игрой (тест)';
+            }
         }
     }
 

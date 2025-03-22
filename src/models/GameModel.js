@@ -2,24 +2,29 @@
  * Модель игры - отвечает за хранение и изменение данных игры
  */
 export default class GameModel {
-    constructor() {
-        this.score = 0;              // Счёт игрока
-        this.initialized = false;    // Флаг инициализации игры
-        this.observers = [];         // Наблюдатели за изменениями
+    constructor(apiService) {
+        this.initialized = false;
+        this.apiService = apiService;
         
-        // Данные о цветке
+        // Инициализируем наблюдателей
+        this.observers = [];
+        
+        // Инициализируем данные о растении
         this.plant = {
-            growthStage: 0,          // Текущая стадия роста (0-3)
-            lastWaterTime: 0,        // Время последнего полива
-            waterNeeded: false,      // Флаг необходимости полива
-            type: 'default'          // Тип цветка
+            growthStage: 0,           // Текущая стадия роста (0-3)
+            lastWaterTime: 0,         // Время последнего полива
+            waterNeeded: false        // Нуждается ли растение в поливе
         };
         
-        // Ресурсы игрока
+        // Инициализируем ресурсы игрока
         this.resources = {
-            water: 100,              // Количество воды для полива
-            lastWaterRefillTime: 0   // Время последнего пополнения воды
+            water: 5,                 // Количество доступной воды (обратная совместимость)
+            fertilizer: 0,            // Количество удобрений
+            seeds: 1                  // Количество семян
         };
+        
+        // Очки игрока
+        this.score = 0;
     }
 
     // Полив растения
@@ -135,6 +140,75 @@ export default class GameModel {
         this.notifyObservers('plantChanged', this.plant);
         this.notifyObservers('resourcesChanged', this.resources);
         this.notifyObservers('scoreChanged', this.score);
+    }
+
+    // Сохранение данных пользователя через API
+    saveUserData(data) {
+        if (!this.initialized) {
+            console.warn('Попытка сохранить данные без инициализации модели');
+            return;
+        }
+        
+        // Если мы в тестовом режиме, имитируем сохранение
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('Тестовый режим: данные сохранены локально', data);
+            localStorage.setItem('userGameData', JSON.stringify(data));
+            return Promise.resolve(true);
+        }
+        
+        // Здесь будет реальный запрос к API для сохранения данных
+        // Например:
+        return this.apiService.saveUserData(data)
+            .then(() => {
+                console.log('Данные пользователя успешно сохранены');
+                return true;
+            })
+            .catch(error => {
+                console.error('Ошибка при сохранении данных пользователя:', error);
+                return false;
+            });
+    }
+
+    // Загрузка данных пользователя через API
+    loadUserData() {
+        // Если мы в тестовом режиме, имитируем загрузку
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const savedData = localStorage.getItem('userGameData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    console.log('Тестовый режим: данные загружены локально', data);
+                    
+                    // Обновляем данные в модели
+                    if (data.plant) this.plant = { ...this.plant, ...data.plant };
+                    if (data.resources) this.resources = { ...this.resources, ...data.resources };
+                    
+                    return Promise.resolve(data);
+                } catch (e) {
+                    console.error('Ошибка при загрузке локальных данных:', e);
+                    return Promise.resolve(null);
+                }
+            }
+            return Promise.resolve(null);
+        }
+        
+        // Здесь будет реальный запрос к API для загрузки данных
+        // Например:
+        return this.apiService.loadUserData()
+            .then(data => {
+                if (data) {
+                    // Обновляем данные в модели
+                    if (data.plant) this.plant = { ...this.plant, ...data.plant };
+                    if (data.resources) this.resources = { ...this.resources, ...data.resources };
+                    
+                    console.log('Данные пользователя успешно загружены', data);
+                }
+                return data;
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке данных пользователя:', error);
+                return null;
+            });
     }
 
     // Базовые методы из предыдущей версии
