@@ -435,12 +435,6 @@ export default class MainScene extends Phaser.Scene {
                 });
             }
             
-            // Сохраняем данные в профиле пользователя через API
-            this.gameModel.saveUserData({
-                plant: this.gameModel.plant,
-                resources: this.gameModel.resources
-            });
-            
             // Уведомляем наблюдателей об изменениях
             this.gameModel.notifyObservers('plantChanged', this.gameModel.plant);
             this.gameModel.notifyObservers('resourcesChanged', this.gameModel.resources);

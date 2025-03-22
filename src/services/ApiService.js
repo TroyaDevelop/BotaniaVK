@@ -207,4 +207,131 @@ export default class ApiService {
                 throw error;
             });
     }
+
+    // Загружает данные пользователя (объединяет данные о растении и ресурсах)
+    loadUserData() {
+        // Если мы в локальном режиме, используем localStorage
+        if (this.isLocalMode) {
+            console.log('ApiService: Загрузка данных из localStorage в тестовом режиме');
+            
+            // Создаем объект с данными пользователя
+            const userData = {
+                plant: null,
+                resources: null
+            };
+            
+            // Загружаем данные о растении из localStorage
+            const plantData = localStorage.getItem('plantData');
+            if (plantData) {
+                try {
+                    userData.plant = JSON.parse(plantData);
+                    console.log('Данные о растении загружены из localStorage');
+                } catch (e) {
+                    console.error('Ошибка при загрузке данных о растении из localStorage:', e);
+                }
+            }
+            
+            // Загружаем данные о ресурсах из localStorage
+            const resourcesData = localStorage.getItem('resourcesData');
+            if (resourcesData) {
+                try {
+                    userData.resources = JSON.parse(resourcesData);
+                    console.log('Данные о ресурсах загружены из localStorage');
+                } catch (e) {
+                    console.error('Ошибка при загрузке данных о ресурсах из localStorage:', e);
+                }
+            }
+            
+            return Promise.resolve(userData);
+        }
+        
+        // Если не в локальном режиме, получаем ID пользователя из URL или другого места
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('viewer_id') || localStorage.getItem('userId');
+        
+        if (!userId) {
+            console.warn('Не удалось определить ID пользователя');
+            return Promise.resolve(null);
+        }
+        
+        // Создаем объект с данными пользователя
+        const userData = {
+            plant: null,
+            resources: null
+        };
+        
+        // Загружаем данные о растении
+        return this.getPlantData(userId)
+            .then(plantData => {
+                userData.plant = plantData;
+                return this.getResourcesData(userId);
+            })
+            .then(resourcesData => {
+                userData.resources = resourcesData;
+                return userData;
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке данных пользователя:', error);
+                return null;
+            });
+    }
+
+    // Сохраняет данные пользователя (объединяет данные о растении и ресурсах)
+    saveUserData(data) {
+        // Если мы в локальном режиме, используем localStorage
+        if (this.isLocalMode) {
+            console.log('ApiService: Сохранение данных в localStorage в тестовом режиме', data);
+            
+            // Сохраняем данные о растении, если они есть
+            if (data.plant) {
+                localStorage.setItem('plantData', JSON.stringify(data.plant));
+            }
+            
+            // Сохраняем данные о ресурсах, если они есть
+            if (data.resources) {
+                localStorage.setItem('resourcesData', JSON.stringify(data.resources));
+            }
+            
+            return Promise.resolve(true);
+        }
+        
+        // Если не в локальном режиме, получаем ID пользователя из URL или другого места
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('viewer_id') || localStorage.getItem('userId');
+        
+        if (!userId) {
+            console.warn('Не удалось определить ID пользователя');
+            return Promise.resolve(false);
+        }
+        
+        // Создаем массив промисов для сохранения данных
+        const promises = [];
+        
+        // Сохраняем данные о растении, если они есть
+        if (data.plant) {
+            promises.push(this.savePlantData(userId, data.plant));
+        }
+        
+        // Сохраняем данные о ресурсах, если они есть
+        if (data.resources) {
+            promises.push(this.saveResourcesData(userId, data.resources));
+        }
+        
+        // Возвращаем промис, который резолвится, когда все данные сохранены
+        return Promise.all(promises)
+            .then(() => true)
+            .catch(error => {
+                console.error('Ошибка при сохранении данных пользователя:', error);
+                
+                // В случае ошибки сохраняем в localStorage
+                if (data.plant) {
+                    localStorage.setItem('plantData', JSON.stringify(data.plant));
+                }
+                if (data.resources) {
+                    localStorage.setItem('resourcesData', JSON.stringify(data.resources));
+                }
+                
+                return false;
+            });
+    }
 }
